@@ -1,0 +1,166 @@
+---
+title: "Regresi Linear"
+author: "Stevanus Sembiring/162112133099"
+date: "2022-10-05"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+df = read_excel("Tingkat Pengangguran.xlsx")
+```
+
+# 1. Model regresi dan menentukan variabel prediktor dan respon
+
+```{r}
+# Menentukan variabel prediktor dan respon
+x1 = df$`Kepadatan (Jiwa/m2)`
+x2 = df$`Proporsi remaja dengan TIK (%)`
+y = df$`Tingkat Pengangguran Terbuka (%)`
+```
+
+Variabel Tingkat Pengangguran Terbuka adalah sebagai Variabel respon (y) sedangkan variabel Proporsi remaja dengan TIK dan Kepadatan adalah variabel prediktor (x).
+
+```{r}
+# Model regresi
+model1 = lm(y~x1+x2, data = df)
+model1
+```
+
+$Y(Kadar) = 1.73456537 + 0.0002008X1(kepadatan) + 0.0407785X2(TIK)$
+
+# 2. Estimasi model menggunakan excel
+
+Hasil estimasi model menggunakan excel ada di dalam folder
+
+# 3. Uji Asumsi Klasik
+
+### Uji Variansi error konstan
+
+1.  Menguji ketidaksamaan variansi dari residual dengan menggunakan **uji glejser**
+
+    $H_0 : Data\ bersifat\ Homogen$\
+    $H_1 : Data\ bersifat\ Heterogen$
+
+    $α : 5$%
+
+```{r message=FALSE, warning=FALSE}
+# Uji Glejser
+library(skedastic)
+glejser(model1)
+```
+
+Dari hasil uji glejser didapatkan P-Value = 0.3477001, sehingga kesimpulannya **Gagal Tolak H0,** karena P-Value(0.3477001) \> $α$(0,05). Kesimpulannya, data ini **tidak** melanggar asumsi Homoskedastisitas (data bersifat homogen).
+
+### Uji Independensi Error (autokorelasi)
+
+menguji apakah dalam model regresi linier ada korelasi antara error dari observasi satu dan lainnya. Uji yang digunakan adalah **Uji Durbin-Watson**.
+
+$H_0 : Tidak\ ada\ autokorelasi$
+
+$H_1 : Terdapat\ autokorelasi$
+
+$α : 5 %$
+
+```{r message=FALSE, warning=FALSE}
+# Uji Durbin Watson
+library(lmtest)
+dwtest(model1)
+```
+
+Dari hasil pengujian Durbin-Watson, P-Value yang didapat adalah 0.4524. Sehingga kesimpulan adalah **Gagal Tolak H~0~ ,** karena P-Value(0.4524) \> α(0,05). Sehingga dapat disimpulkan bahwa data tersebut **Tidak ada autokorelasi**.
+
+### Uji Normalitas
+
+Menguji error berdistribusi normal.
+
+$H_0 : Error\ berdistribusi\ normal$
+
+$H_1 : Error\ tidak\ berdistribusi\ normal$
+
+$α : 5$%
+
+```{r message=FALSE, warning=FALSE}
+# Uji Kolmogorov-Smirnov (KS)
+error = model1$residuals
+library(stats)
+ks.test(error, "pnorm")
+```
+
+Dari pengujian Kolmogorov-Smirnov (KS) di atas, P-Value yang didapat sama dengan 0.2207, maka **Gagal Tolak H~0~** karena P-value(0.2207) \> $α$(0,05) dan dapat disimpulkan bahwa dalam data ini error telah berdistribusi normal.
+
+### Uji Multikolinieritas
+
+Menguji hubungan antara variabel prediktor dengan melihat nilai **Variance Inflation Factor (VIF),**
+
+Nilai VIF ketika tidak terjadi Multikolinieritas adalah \< 5.
+
+```{r message=FALSE, warning=FALSE}
+# Nilai VIF
+library(regclass)
+VIF(model1)
+```
+
+Dari hasil Uji Multikolinieritas di dapatkan hasil VIF dari variabel X1 dan X2 \< 5 sehingga dapat disimpulkan bahwa **Tidak terjadi Multikolinieritas**
+
+#### Dari hasil pengujian asumsi klasik yang telah dilakukan didapatkan TIDAK ADANYA pelanggaran pada Uji Asumsi Klasik (Semua Asumsi Terpenuhi)
+
+# 4. Hasil Estimasi
+
+```{r}
+# hasil estimasi
+summary(model1)
+```
+
+$β_0 = 1.734653685$
+
+$β_1 = 0.000200775$ $β_2 = 0.040778518$
+
+$R-squared = 0.1907$
+
+
+# 5. pemodelan
+
+### Pemodelan dengan polinom derajat 2
+
+```{r message=FALSE, warning=FALSE}
+# Model Regresi Kuadrat (Polinom derajat dua)
+polinom_model = lm(y~x1+I(x1^2)+x2+I(x2^2), data=df)
+summary(polinom_model)
+```
+
+### Pemodelan dengan interaksi
+
+```{r}
+# Model Regresi dengan Interaksi
+linmod_Interaksi = lm(y~x1+x2+x1*x2, data = df)
+summary(linmod_Interaksi)
+```
+
+Dari 2 pemodelan yang dilakukan di dapatkan bahwa model regresi dengan interaksi memiliki R-Squared lebih tinggi.
+
+# 6. Membandingkan hasil no.4 dan 5
+
+Dari hasil kedua Model Regresi di atas, ketika data pengamatan yang diregresikan dengan Regresi dengan interaksi mendapatkan nilai kebaikan model (R-Squared) **lebih baik atau lebih tinggi** jika dibandingkan dengan Model Regresi Linier dan Model regresi polinomial 2 derajat. model yang didapatkan adalah **0,3202 atau 32,20%**. Sehingga model ini lebih baik untuk dimodelkan ke dalam **model regresi dengan interaksi** .
+
+# 7. Interpretasi model terbaik dari no.6
+```{r}
+linmod_Interaksi
+```
+
+$y(Tingkat\ Pengangguran) = 1.3077642 - 0.0430352x1 + 0.0395024x2 + -0.0004353x1:x2$
+
+-   Ketika seluruh variabel prediktor konstan maka Tingkat Pengangguran Terbuka bernilai 1.3077642%.
+
+-   Ketika variabel prediktor lainnya konstan, maka Kepadatan akan menambah Tingkat Pengangguran Terbuka sebesar 0,0430352 setiap Jiwa/m\^2.
+
+-   Ketika variabel prediktor lainnya konstan, maka Proporsi Remaja dengan TIK akan akan menambah Tingkat Pengangguran Terbuka sebesar 0,0395024 setiap Persen(%).
+
+-   Ketika variabel prediktor lainnya konstan, maka Interaksi antara Kepadatan dan Proporsi Remaja dengan TIK akan mengurangi Tingkat Pengangguran Terbuka sebesar 0,0004353.
